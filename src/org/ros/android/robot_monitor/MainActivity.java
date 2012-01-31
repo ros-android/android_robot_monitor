@@ -41,33 +41,25 @@ import android.view.MenuItem;
 
 import org.ros.address.InetAddressFactory;
 import org.ros.android.MasterChooser;
-import org.ros.node.DefaultNodeRunner;
 import org.ros.node.NodeConfiguration;
-import org.ros.node.NodeRunner;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Random;
 
 /**
  * @author chadrockey@gmail.com (Chad Rockey)
  */
 public class MainActivity extends Activity {
 
-  private URI masterUri;
-  private final NodeRunner nodeRunner;
-  //private DiagnosticsSubscriber diagnosticsSub;
-  private DiagnosticsDisplay diagnosticsDisplay;
-
-  public MainActivity() {
-	  nodeRunner = DefaultNodeRunner.newDefault();
-  }
+  private MonitorApplication ma;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    ma = (MonitorApplication)getApplicationContext();
     setContentView(R.layout.main);
-    if(masterUri == null){
+    
+    if(ma.getMasterURI() == null){
     	startActivityForResult(new Intent(this, MasterChooser.class), 0);
     }
   }
@@ -75,34 +67,26 @@ public class MainActivity extends Activity {
   @Override
   protected void onResume() {
     super.onResume();
-    if (masterUri != null) {
+    if (ma.getMasterURI() != null) {
 	  NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
-	  nodeConfiguration.setMasterUri(masterUri);
+	  nodeConfiguration.setMasterUri(ma.getMasterURI());
+	  ma.setNodeConfiguation(nodeConfiguration);
 	  
-	  // Set an "anonymous" node name with a random suffix.
-	  Random rand = new Random();
-	  int random_int = Math.abs(rand.nextInt());
-	  String nodeName = "android_robot_monitor_" + random_int;
-	  nodeConfiguration.setNodeName(nodeName);
-	  this.diagnosticsDisplay = new DiagnosticsDisplay(this);
-	  this.nodeRunner.run(this.diagnosticsDisplay, nodeConfiguration);
-	  //DiagnosticsDisplay dd = new DiagnosticsDisplay(this);
-      //this.diagnosticsSub = new DiagnosticsSubscriber(dd);
-	  //this.nodeRunner.run(this.diagnosticsSub, nodeConfiguration);
+	  Intent myIntent = new Intent(this, DiagnosticsArrayDisplay.class);
+	  startActivity(myIntent);
     }
   }
 
   @Override
   protected void onPause() {
     super.onPause();
-    this.nodeRunner.shutdownNodeMain(this.diagnosticsDisplay);
   }
 
   @Override
   protected void onActivityResult(int requestCode, int resultCode, Intent data) {
     if (requestCode == 0 && resultCode == RESULT_OK) {
       try {
-        masterUri = new URI(data.getStringExtra("ROS_MASTER_URI"));
+        ma.setMasterURI(new URI(data.getStringExtra("ROS_MASTER_URI")));
       } catch (URISyntaxException e) {
         throw new RuntimeException(e);
       }
