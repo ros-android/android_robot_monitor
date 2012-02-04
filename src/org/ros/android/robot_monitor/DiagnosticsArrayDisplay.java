@@ -1,10 +1,11 @@
 package org.ros.android.robot_monitor;
 
-
-import java.util.Random;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
@@ -14,22 +15,25 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TableLayout;
 
+import org.ros.address.InetAddressFactory;
+import org.ros.android.MasterChooser;
 import org.ros.message.MessageListener;
 import org.ros.message.diagnostic_msgs.DiagnosticArray;
 import org.ros.message.diagnostic_msgs.DiagnosticStatus;
-import org.ros.namespace.GraphName;
-import org.ros.node.Node;
 import org.ros.node.NodeConfiguration;
-import org.ros.node.NodeMain;
-import org.ros.node.topic.Subscriber;
 
 public class DiagnosticsArrayDisplay extends Activity {
-
-	private Activity activity;
-	private DisplayClass dc;
+	
+	private final DiagnosticsArrayDisplay dad;
+	//private DisplayClass dc;
+	
+	private boolean saveNode;
+	private boolean hasInitialized;
 	
 	public DiagnosticsArrayDisplay(){
-		activity = this;
+		dad = this;
+		saveNode = false;
+		hasInitialized = false;
 	}
 	
     @Override
@@ -40,40 +44,95 @@ public class DiagnosticsArrayDisplay extends Activity {
 
     @Override
     protected void onResume() {
-      super.onResume();
-      MonitorApplication ma = (MonitorApplication)getApplicationContext();
-      NodeConfiguration nodeConfiguration = ma.getNodeConfiguration();
-  
-      dc = new DisplayClass();
-      nodeConfiguration.setNodeName(dc.getDefaultNodeName());
-      ma.getNodeMainExecutor().execute(dc, nodeConfiguration);
+    	super.onResume();
+	  	MonitorApplication ma = (MonitorApplication)getApplicationContext();
+		if(ma.getMasterURI() == null){
+			hasInitialized = false;
+			startActivityForResult(new Intent(this, MasterChooser.class), 0);
+		} else {
+			connect();
+		}
+    }
+    
+    private void connect(){
+    	MonitorApplication ma = (MonitorApplication)getApplicationContext();
+    	saveNode = false;
+    	if(ma.getMasterURI() != null){
+  		  NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
+  		  nodeConfiguration.setMasterUri(ma.getMasterURI());
+  		  ma.setNodeConfiguation(nodeConfiguration);
+  	      	if(!hasInitialized){
+  	      		hasInitialized = true;
+  				ma.getNodeConfiguration().setNodeName(ma.getDefaultNodeName());
+  				ma.getNodeMainExecutor().execute(ma, ma.getNodeConfiguration());
+  	      	}
+  	      	DisplayClass dc = new DisplayClass();
+  			dc.execute();
+      	}
+    }
+    
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+      if (requestCode == 0 && resultCode == RESULT_OK) {
+        try {
+          MonitorApplication ma = (MonitorApplication)getApplicationContext();
+          ma.setMasterURI(new URI(data.getStringExtra("ROS_MASTER_URI")));
+          connect();
+        } catch (URISyntaxException e) {
+          throw new RuntimeException(e);
+        }
+      }
     }
 
     @Override
     protected void onPause() {
     	super.onPause();
-    	MonitorApplication ma = (MonitorApplication)getApplicationContext();
-    	ma.getNodeMainExecutor().shutdownNodeMain(dc);
+    	if(!saveNode){
+    		MonitorApplication ma = (MonitorApplication)getApplicationContext();
+    		ma.clear();
+    		ma.getNodeMainExecutor().shutdownNodeMain(ma);
+    	}
+    }
+    
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+      super.onConfigurationChanged(newConfig);
+      setContentView(R.layout.main);
     }
 
-	private class DisplayClass extends AsyncTask<String, DiagnosticArray, String> implements NodeMain {
+	private class DisplayClass extends AsyncTask<String, DiagnosticArray, String> {
 		
-		private Subscriber<DiagnosticArray> subscriber;
-	
+		private MessageListener<DiagnosticArray> ml;
+		private boolean buttonPressed;
+		
+		public DisplayClass(){
+			buttonPressed = false;
+		}
+		
 		@Override
 		protected void onPreExecute(){
-			
 		}
-	
+
 		@Override
 		protected String doInBackground(String... params) {
-		  subscriber.addMessageListener(new MessageListener<DiagnosticArray>() {
-	        @Override
-	        public void onNewMessage(DiagnosticArray message) {
-	        	publishProgress(message);
-	        }
-	      });
-		  return null;
+				MonitorApplication ma = (MonitorApplication)getApplicationContext();
+				while(ma.getSubscriber() == null && !isCancelled()){
+					try {
+						Thread.sleep(10);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+				ml = new MessageListener<DiagnosticArray>() {
+			        @Override
+			        public void onNewMessage(DiagnosticArray message) {
+			        	publishProgress(message);
+			        }
+				};
+				ma.getSubscriber().addMessageListener(ml);
+	
+			return null;
 		}
 		
 		@Override
@@ -83,26 +142,13 @@ public class DiagnosticsArrayDisplay extends Activity {
 		
 		@Override
 		protected void onPostExecute(String msg){
-			
-		}
-
-		@Override
-		public void onStart(Node node) {
-			subscriber = node.newSubscriber("/diagnostics_agg", "diagnostic_msgs/DiagnosticArray");
-			this.execute();
-		}
-	
-		@Override
-		public void onShutdown(Node node) {
-			this.cancel(true);
-		}
-	
-		@Override
-		public void onShutdownComplete(Node node) {
-	
 		}
 		
-		public void displayArray(DiagnosticArray msg){
+		@Override
+		protected void onCancelled(){
+		}
+		
+		void displayArray(DiagnosticArray msg){
 			TableLayout tl = (TableLayout)findViewById(R.id.maintable);
 			tl.removeAllViews();
 			
@@ -116,7 +162,7 @@ public class DiagnosticsArrayDisplay extends Activity {
 			// Actually display each Status
 			byte level = DiagnosticStatus.OK;
 			for(final DiagnosticStatus ds : msg.status){
-				Button b = new Button(activity);
+				Button b = new Button(dad);
 				b.setText(ds.name);
 				level = updateLevel(level, ds.level);
 				if(ds.level == 3){ // STALE is not part of the message definitions
@@ -126,28 +172,36 @@ public class DiagnosticsArrayDisplay extends Activity {
 					b.setTextColor(Color.RED);
 					b.setCompoundDrawablesWithIntrinsicBounds(error, null, null, null);
 				} else if(ds.level == DiagnosticStatus.WARN){
-					b.setTextColor(Color.YELLOW);
+					b.setTextColor(Color.rgb(150, 126, 0));
 					b.setCompoundDrawablesWithIntrinsicBounds(warn, null, null, null);
 				} else { // Is OK!
-					b.setTextColor(Color.GREEN);
+					b.setTextColor(Color.rgb(0, 100, 0));
 					b.setCompoundDrawablesWithIntrinsicBounds(ok, null, null, null);
 				}
 				b.setOnClickListener(new View.OnClickListener() {
 		             public void onClick(View v) {
-		            	 Intent myIntent = new Intent(activity, DiagnosticsStatusDisplay.class);
-		            	 myIntent.putExtra("level", ds.level);
-		            	 myIntent.putExtra("name", ds.name);
-		            	 myIntent.putExtra("message", ds.message);
-		            	 myIntent.putExtra("hardware_id", ds.hardware_id);
-		            	 String[] keys = new String[ds.values.size()];
-		            	 String[] values = new String[ds.values.size()];
-		            	 for(int i = 0; i < ds.values.size(); i++){
-		            		 keys[i] = ds.values.get(i).key;
-		            		 values[i] = ds.values.get(i).value;
+		            	 if(!buttonPressed){
+		            		 buttonPressed = true;
+			            	 // Do not kill node on activity change
+			            	 saveNode = true;
+			            	// Unregister listener
+			         	   	MonitorApplication ma = (MonitorApplication)getApplicationContext();
+			         	   	ma.getSubscriber().removeMessageListener(ml);
+			            	 Intent myIntent = new Intent(dad, DiagnosticsStatusDisplay.class);
+			            	 myIntent.putExtra("level", ds.level);
+			            	 myIntent.putExtra("name", ds.name);
+			            	 myIntent.putExtra("message", ds.message);
+			            	 myIntent.putExtra("hardware_id", ds.hardware_id);
+			            	 String[] keys = new String[ds.values.size()];
+			            	 String[] values = new String[ds.values.size()];
+			            	 for(int i = 0; i < ds.values.size(); i++){
+			            		 keys[i] = ds.values.get(i).key;
+			            		 values[i] = ds.values.get(i).value;
+			            	 }
+			            	 myIntent.putExtra("keys", keys);
+			            	 myIntent.putExtra("values", values);
+			            	 dad.startActivity(myIntent);
 		            	 }
-		            	 myIntent.putExtra("keys", keys);
-		            	 myIntent.putExtra("values", values);
-		            	 activity.startActivity(myIntent);
 		             }
 		         });
 				tl.addView(b);
@@ -161,16 +215,6 @@ public class DiagnosticsArrayDisplay extends Activity {
 			} else {
 				return oldLevel;
 			}
-		}
-	
-		@Override
-		public GraphName getDefaultNodeName() {
-			// Set an "anonymous" node name with a random suffix.
-			Random rand = new Random();
-			int random_int = Math.abs(rand.nextInt());
-			String nodeName = "android_robot_monitor_" + random_int;
-			GraphName name = new GraphName(nodeName);
-			return name;
 		}
 		
 	}
