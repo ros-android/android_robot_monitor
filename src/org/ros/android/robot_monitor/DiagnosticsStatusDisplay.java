@@ -36,6 +36,7 @@ import org.ros.message.diagnostic_msgs.DiagnosticStatus;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.ViewGroup.LayoutParams;
@@ -78,6 +79,18 @@ public class DiagnosticsStatusDisplay extends Activity {
     	tv.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
     	tl.addView(tv);
     }
+	TextView tv = (TextView)findViewById(R.id.global);
+	byte level = intent.getByteExtra("level", (byte) 3);
+	Resources res = getResources();
+	if(level == 3){ // STALE is not part of the message definitions
+		tv.setBackgroundColor(res.getColor(R.color.stale));
+	} else if(level == DiagnosticStatus.ERROR){
+		tv.setBackgroundColor(res.getColor(R.color.error));
+	} else if(level == DiagnosticStatus.WARN){
+		tv.setBackgroundColor(res.getColor(R.color.warn));
+	} else { // Is OK!
+		tv.setBackgroundColor(res.getColor(R.color.ok));
+	}
   }
 
   @Override
@@ -174,6 +187,18 @@ public class DiagnosticsStatusDisplay extends Activity {
 						    	tl.addView(tv);
 						    }
 					    }
+					}
+					TextView tv = (TextView)findViewById(R.id.global);
+					byte level = ds.level;
+					Resources res = getResources();
+					if(level == 3){ // STALE is not part of the message definitions
+						tv.setBackgroundColor(res.getColor(R.color.stale));
+					} else if(level == DiagnosticStatus.ERROR){
+						tv.setBackgroundColor(res.getColor(R.color.error));
+					} else if(level == DiagnosticStatus.WARN){
+						tv.setBackgroundColor(res.getColor(R.color.warn));
+					} else { // Is OK!
+						tv.setBackgroundColor(res.getColor(R.color.ok));
 					}
 				}
 			}

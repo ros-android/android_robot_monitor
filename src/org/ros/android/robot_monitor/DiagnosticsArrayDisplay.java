@@ -7,13 +7,13 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.Resources;
-import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TableLayout;
+import android.widget.TextView;
 
 import org.ros.address.InetAddressFactory;
 import org.ros.android.MasterChooser;
@@ -166,16 +166,16 @@ public class DiagnosticsArrayDisplay extends Activity {
 				b.setText(ds.name);
 				level = updateLevel(level, ds.level);
 				if(ds.level == 3){ // STALE is not part of the message definitions
-					b.setTextColor(Color.BLUE);
+					b.setTextColor(res.getColor(R.color.stale));
 					b.setCompoundDrawablesWithIntrinsicBounds(stale, null, null, null);
 				} else if(ds.level == DiagnosticStatus.ERROR){
-					b.setTextColor(Color.RED);
+					b.setTextColor(res.getColor(R.color.error));
 					b.setCompoundDrawablesWithIntrinsicBounds(error, null, null, null);
 				} else if(ds.level == DiagnosticStatus.WARN){
-					b.setTextColor(Color.rgb(150, 126, 0));
+					b.setTextColor(res.getColor(R.color.warn));
 					b.setCompoundDrawablesWithIntrinsicBounds(warn, null, null, null);
 				} else { // Is OK!
-					b.setTextColor(Color.rgb(0, 100, 0));
+					b.setTextColor(res.getColor(R.color.ok));
 					b.setCompoundDrawablesWithIntrinsicBounds(ok, null, null, null);
 				}
 				b.setOnClickListener(new View.OnClickListener() {
@@ -205,6 +205,17 @@ public class DiagnosticsArrayDisplay extends Activity {
 		             }
 		         });
 				tl.addView(b);
+			}
+			// TODO This is where I would store the message into buttons that scroll to look back in time.
+			TextView tv = (TextView)findViewById(R.id.global);
+			if(level == 3){ // STALE is not part of the message definitions
+				tv.setBackgroundColor(res.getColor(R.color.stale));
+			} else if(level == DiagnosticStatus.ERROR){
+				tv.setBackgroundColor(res.getColor(R.color.error));
+			} else if(level == DiagnosticStatus.WARN){
+				tv.setBackgroundColor(res.getColor(R.color.warn));
+			} else { // Is OK!
+				tv.setBackgroundColor(res.getColor(R.color.ok));
 			}
 		}
 		

@@ -1,13 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView android:id="@+id/scrollview" 
-			android:layout_width="match_parent"
-    		android:layout_height="match_parent"
-            android:fillViewport="true"
-            xmlns:android="http://schemas.android.com/apk/res/android">
-	<TableLayout
-	  android:id="@+id/maintable" 
-	  xmlns:android="http://schemas.android.com/apk/res/android"
-	  android:layout_width="match_parent"
-	  android:layout_height="match_parent">
-	</TableLayout>
-</ScrollView>
+<LinearLayout
+       android:id="@+id/linearLayout"
+       android:layout_width="match_parent"
+       android:layout_height="match_parent"
+       xmlns:android="http://schemas.android.com/apk/res/android"
+       android:orientation="vertical" >
+    <TextView android:id="@+id/global"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:textAppearance="?android:attr/textAppearanceLarge"
+              android:text="  " />
+	<ScrollView android:id="@+id/scrollview" 
+				android:layout_width="match_parent"
+	    		android:layout_height="match_parent"
+	            android:fillViewport="true"
+	            xmlns:android="http://schemas.android.com/apk/res/android">
+		<TableLayout
+		  android:id="@+id/maintable"
+		  android:layout_width="match_parent"
+		  android:layout_height="match_parent">
+		</TableLayout>
+	</ScrollView>
+</LinearLayout>
