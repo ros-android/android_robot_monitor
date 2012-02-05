@@ -35,6 +35,7 @@ import org.ros.message.diagnostic_msgs.DiagnosticStatus;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.ViewGroup.LayoutParams;
@@ -105,6 +106,12 @@ public class DiagnosticsStatusDisplay extends Activity {
 	    super.onBackPressed();
   }
   
+  @Override
+  public void onConfigurationChanged(Configuration newConfig) {
+    super.onConfigurationChanged(newConfig);
+    setContentView(R.layout.details);
+  }
+  
 	private class DisplayClass extends AsyncTask<String, DiagnosticArray, String> {
 		
 		@Override
@@ -151,19 +158,21 @@ public class DiagnosticsStatusDisplay extends Activity {
 					if(ds.values.size() == -1 && ds.hardware_id.length() == 0){// Aggregated Diagnostic
 					} else { // Final level diagnostic
 					    TextView tname = (TextView)findViewById(R.id.name);
-					    tname.setText(ds.name);
-					    TextView thard = (TextView)findViewById(R.id.hardware_id);
-					    thard.setText(ds.hardware_id);
-					    TextView tmess = (TextView)findViewById(R.id.message);
-					    tmess.setText(ds.message);
-					    TableLayout tl = (TableLayout)findViewById(R.id.keys);
-					    tl.removeAllViews();
-					    for(int i = 0; i < ds.values.size(); i++){
-					    	TextView tv = new TextView(dsd);
-					    	String keystring = ds.values.get(i).key + ": " + ds.values.get(i).value;
-					    	tv.setText(keystring);
-					    	tv.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
-					    	tl.addView(tv);
+					    if(tname != null){
+						    tname.setText(ds.name);
+						    TextView thard = (TextView)findViewById(R.id.hardware_id);
+						    thard.setText(ds.hardware_id);
+						    TextView tmess = (TextView)findViewById(R.id.message);
+						    tmess.setText(ds.message);
+						    TableLayout tl = (TableLayout)findViewById(R.id.keys);
+						    tl.removeAllViews();
+						    for(int i = 0; i < ds.values.size(); i++){
+						    	TextView tv = new TextView(dsd);
+						    	String keystring = ds.values.get(i).key + ": " + ds.values.get(i).value;
+						    	tv.setText(keystring);
+						    	tv.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
+						    	tl.addView(tv);
+						    }
 					    }
 					}
 				}
