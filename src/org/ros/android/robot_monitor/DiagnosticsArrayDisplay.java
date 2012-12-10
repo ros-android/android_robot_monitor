@@ -1,6 +1,6 @@
 package org.ros.android.robot_monitor;
 
-import java.net.URI;
+/*import java.net.URI;
 import java.net.URISyntaxException;
 
 import android.app.Activity;
@@ -229,4 +229,4 @@ public class DiagnosticsArrayDisplay extends Activity {
 		}
 		
 	}
-}
+}*/

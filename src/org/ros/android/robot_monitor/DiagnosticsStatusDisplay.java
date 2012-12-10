@@ -29,7 +29,7 @@
 
 package org.ros.android.robot_monitor;
 
-import org.ros.message.MessageListener;
+/*import org.ros.message.MessageListener;
 import org.ros.message.diagnostic_msgs.DiagnosticArray;
 import org.ros.message.diagnostic_msgs.DiagnosticStatus;
 
@@ -41,13 +41,13 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.TableLayout;
-import android.widget.TextView;
+import android.widget.TextView;*/
 
 /**
  * @author chadrockey@gmail.com (Chad Rockey)
  */
 
-public class DiagnosticsStatusDisplay extends Activity {
+/*public class DiagnosticsStatusDisplay extends Activity {
 	private final DiagnosticsStatusDisplay dsd;
 	private MessageListener<DiagnosticArray> ml;
 	private String name;
@@ -205,4 +205,4 @@ public class DiagnosticsStatusDisplay extends Activity {
 		}
 	}
 
-}
+}*/
