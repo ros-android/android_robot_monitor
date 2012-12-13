@@ -30,13 +30,12 @@
 package org.ros.android.robot_monitor;
 
 import org.ros.node.ConnectedNode;
+import org.ros.android.MessageCallable;
 import org.ros.message.MessageListener;
 import org.ros.namespace.GraphName;
 import org.ros.node.Node;
 import org.ros.node.NodeMain;
 import org.ros.node.topic.Subscriber;
-import android.content.Context;
-import android.widget.TextView;
 
 import diagnostic_msgs.DiagnosticArray;
 
@@ -45,16 +44,14 @@ import diagnostic_msgs.DiagnosticArray;
  */
 public class DiagnosticArraySubscriber implements NodeMain
 {
-  private Context context;
-  private TextView tv;
+  MessageCallable<DiagnosticArray, DiagnosticArray> callable;
   
-  public DiagnosticArraySubscriber(Context context)
+  public DiagnosticArraySubscriber()
   {
-	  this.context = context;
   }
   
-  public void setTextView(TextView tv){
-	  this.tv = tv;
+  public void setMessageCallable(MessageCallable<DiagnosticArray, DiagnosticArray> callable){
+	  this.callable = callable;
   }
 
   @Override
@@ -68,15 +65,9 @@ public class DiagnosticArraySubscriber implements NodeMain
     subscriber.addMessageListener(new MessageListener<DiagnosticArray>() {
       @Override
       public void onNewMessage(final DiagnosticArray message) {
-        	//Toast.makeText(DiagnosticArraySubscriber.this.context.getApplicationContext(), 
-        	//		message.getHeader().getStamp().toString(), Toast.LENGTH_LONG).show();
-          DiagnosticArraySubscriber.this.tv.post(new Runnable() {
-            @Override
-            public void run() {
-            	DiagnosticArraySubscriber.this.tv.setText(message.getHeader().getStamp().toString());
-            }
-          });
-          DiagnosticArraySubscriber.this.tv.postInvalidate();
+    	if(callable != null){
+    		callable.call(message);
+    	}
       }
     });
   }

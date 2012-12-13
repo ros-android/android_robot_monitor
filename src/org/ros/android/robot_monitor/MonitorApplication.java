@@ -16,7 +16,10 @@
 
 package org.ros.android.robot_monitor;
 
+import android.content.res.Resources;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.widget.TableLayout;
 import android.widget.TextView;
 
 import org.ros.address.InetAddressFactory;
@@ -39,7 +42,7 @@ public class MonitorApplication extends RosActivity
 {
 	
   private DiagnosticArraySubscriber sub;
-  
+  private DiagnosticsArrayDisplay dad;
 
   public MonitorApplication()
   {
@@ -56,8 +59,28 @@ public class MonitorApplication extends RosActivity
   {
 	  super.onCreate(savedInstanceState);
 	  setContentView(R.layout.main);
-	  this.sub = new DiagnosticArraySubscriber(this);
-	  this.sub.setTextView((TextView)findViewById(R.id.text));
+	  this.dad = new DiagnosticsArrayDisplay(this);
+	  TableLayout tl = (TableLayout)findViewById(R.id.maintable);
+	  this.dad.setTableLayout(tl);
+	  TextView tv = (TextView)findViewById(R.id.global);
+	  this.dad.setTextView(tv);
+	  
+	  // TODO Investigate why these icons can be wrong.
+	  Resources res = getResources();
+	  Drawable error = res.getDrawable(R.drawable.error);
+	  Drawable warn = res.getDrawable(R.drawable.warn);
+	  Drawable ok = res.getDrawable(R.drawable.ok);
+	  Drawable stale = res.getDrawable(R.drawable.stale);
+	  this.dad.setDrawables(error, warn, ok, stale);
+	  this.dad.setColors(getResources().getColor(R.color.error), getResources().getColor(R.color.warn), getResources().getColor(R.color.ok), getResources().getColor(R.color.stale));
+	  this.sub = new DiagnosticArraySubscriber();
+	  this.sub.setMessageCallable(new MessageCallable<DiagnosticArray, DiagnosticArray>(){
+		  @Override
+		  public DiagnosticArray call(DiagnosticArray message){
+			  MonitorApplication.this.dad.displayArray(message);
+			  return message;
+		  }
+	  });
   }
   
   @Override
