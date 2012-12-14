@@ -58,6 +58,7 @@ public class MonitorApplication extends RosActivity
   protected void onCreate(Bundle savedInstanceState)
   {
 	  super.onCreate(savedInstanceState);
+	  
 	  setContentView(R.layout.main);
 	  this.dad = new DiagnosticsArrayDisplay(this);
 	  TableLayout tl = (TableLayout)findViewById(R.id.maintable);
@@ -73,7 +74,15 @@ public class MonitorApplication extends RosActivity
 	  Drawable stale = res.getDrawable(R.drawable.stale);
 	  this.dad.setDrawables(error, warn, ok, stale);
 	  this.dad.setColors(getResources().getColor(R.color.error), getResources().getColor(R.color.warn), getResources().getColor(R.color.ok), getResources().getColor(R.color.stale));
-	  this.sub = new DiagnosticArraySubscriber();
+	  
+	  this.sub = (DiagnosticArraySubscriber)getLastNonConfigurationInstance();
+	  if(this.sub != null){
+		  if(this.sub.getLastMessage() != null){
+			  this.dad.displayArray(this.sub.getLastMessage());
+		  }
+	  } else {
+		  this.sub = new DiagnosticArraySubscriber();
+	  }
 	  this.sub.setMessageCallable(new MessageCallable<DiagnosticArray, DiagnosticArray>(){
 		  @Override
 		  public DiagnosticArray call(DiagnosticArray message){
@@ -87,7 +96,13 @@ public class MonitorApplication extends RosActivity
   protected void onResume()
   {
 		super.onResume();
-	}
+  }
+  
+  @Override
+  public Object onRetainNonConfigurationInstance(){
+	  this.sub.clearCallable();
+	  return this.sub;
+  }
 
   @Override
   protected void init(NodeMainExecutor nodeMainExecutor)

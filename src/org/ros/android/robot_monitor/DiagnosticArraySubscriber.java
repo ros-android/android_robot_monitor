@@ -46,6 +46,8 @@ public class DiagnosticArraySubscriber implements NodeMain
 {
   MessageCallable<DiagnosticArray, DiagnosticArray> callable;
   
+  DiagnosticArray last_message;
+  
   public DiagnosticArraySubscriber()
   {
   }
@@ -53,10 +55,18 @@ public class DiagnosticArraySubscriber implements NodeMain
   public void setMessageCallable(MessageCallable<DiagnosticArray, DiagnosticArray> callable){
 	  this.callable = callable;
   }
+  
+  public void clearCallable(){
+	  this.callable = null;
+  }
 
   @Override
   public GraphName getDefaultNodeName() {
     return GraphName.of("android_gingerbread/ros_text_view");
+  }
+  
+  public DiagnosticArray getLastMessage(){
+	  return this.last_message;
   }
 
   @Override
@@ -68,6 +78,7 @@ public class DiagnosticArraySubscriber implements NodeMain
     	if(callable != null){
     		callable.call(message);
     	}
+    	DiagnosticArraySubscriber.this.last_message = message;
       }
     });
   }
